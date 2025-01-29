@@ -33,6 +33,38 @@
             "problemMatcher": [
                 "$gcc"
             ]
+        },
+        {
+            "label": "build debug",
+            "type": "shell",
+            "command": "C:\\MinGW\\bin\\g++.exe",
+            "args": [
+                "-g",
+                "${workspaceFolder}\\src\\main.cpp",
+                "-o",
+                "${workspaceFolder}\\main.exe",
+                "-lwinhttp",
+                "-L${env:SystemRoot}\\System32",
+                "-static",
+                "-static-libgcc",
+                "-static-libstdc++",
+                "-Wall"
+            ],
+            "options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/c"
+                    ]
+                },
+                "env": {
+                    "PATH": "${env:PATH};C:\\MinGW\\bin"
+                }
+            },
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ]
         }
     ]
 }

@@ -82,6 +82,7 @@ std::string httpGet(const std::wstring &domain, const std::wstring &path)
 
     if (!hSession)
     {
+        std::cerr << "Failed to open WinHTTP session. Error: " << GetLastError() << std::endl;
         return result;
     }
 
@@ -89,6 +90,7 @@ std::string httpGet(const std::wstring &domain, const std::wstring &path)
     HINTERNET hConnect = WinHttpConnect(hSession, domain.c_str(), INTERNET_DEFAULT_HTTPS_PORT, 0);
     if (!hConnect)
     {
+        std::cerr << "Failed to connect to domain. Error: " << GetLastError() << std::endl;
         WinHttpCloseHandle(hSession);
         return result;
     }
@@ -108,12 +110,14 @@ std::string httpGet(const std::wstring &domain, const std::wstring &path)
         return result;
     }
 
+    /*
     // Disable SSL/TLS certificate validation (for testing purposes only)
     DWORD dwFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA |
                     SECURITY_FLAG_IGNORE_CERT_DATE_INVALID |
                     SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
                     SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
     WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags));
+    */
 
     // Set SSL/TLS version (optional, if needed)
     DWORD dwProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 |
@@ -278,14 +282,14 @@ int main()
     CreateTrayIcon(hwnd);
 
     // Run indefinitely, checking every 5 seconds
-    std::thread logThread([]() {
+    std::thread logThread([]()
+                          {
         const std::string logFilePath = "ip_log.csv";
         while (true)
         {
             logIPChange(logFilePath);
             std::this_thread::sleep_for(std::chrono::seconds(5));
-        }
-    });
+        } });
 
     // Message loop for tray icon
     MSG msg;
