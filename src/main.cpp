@@ -12,9 +12,12 @@
 
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
+#define ID_TRAY_REVEAL_CSV 1002
+#define ID_TRAY_OPEN_CSV 1003
 
 NOTIFYICONDATAW nid;
 HWND hwnd;
+std::string logFilePath; // Global variable for log file path
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -25,7 +28,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             POINT pt;
             GetCursorPos(&pt);
             HMENU hMenu = CreatePopupMenu();
-            InsertMenuW(hMenu, 0, MF_BYPOSITION | MF_STRING, ID_TRAY_EXIT, L"Exit");
+            InsertMenuW(hMenu, 0, MF_BYPOSITION | MF_STRING, ID_TRAY_REVEAL_CSV, L"Reveal CSV");
+            InsertMenuW(hMenu, 1, MF_BYPOSITION | MF_STRING, ID_TRAY_OPEN_CSV, L"Open CSV");
+            InsertMenuW(hMenu, 2, MF_BYPOSITION | MF_STRING, ID_TRAY_EXIT, L"Exit");
             SetForegroundWindow(hwnd);
             TrackPopupMenu(hMenu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, hwnd, NULL);
             DestroyMenu(hMenu);
@@ -37,6 +42,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             Shell_NotifyIconW(NIM_DELETE, &nid);
             TerminateProcess(GetCurrentProcess(), 0);
+        }
+        else if (LOWORD(wParam) == ID_TRAY_REVEAL_CSV)
+        {
+            // Reveal CSV in Explorer
+            std::wstring command = L"/select,\"" + std::wstring(logFilePath.begin(), logFilePath.end()) + L"\"";
+            ShellExecuteW(NULL, L"open", L"explorer.exe", command.c_str(), NULL, SW_SHOW);
+        }
+        else if (LOWORD(wParam) == ID_TRAY_OPEN_CSV)
+        {
+            // Open CSV with default app
+            std::wstring wLogFilePath(logFilePath.begin(), logFilePath.end());
+            ShellExecuteW(NULL, L"open", wLogFilePath.c_str(), NULL, NULL, SW_SHOW);
         }
     }
     else if (uMsg == WM_DESTROY)
@@ -57,6 +74,13 @@ void CreateTrayIcon(HWND hwnd)
     nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     wcscpy_s(nid.szTip, L"IP Logger");
     Shell_NotifyIconW(NIM_ADD, &nid);
+}
+
+std::wstring GetFullPath(const std::string &relativePath)
+{
+    char fullPath[MAX_PATH];
+    GetFullPathNameA(relativePath.c_str(), MAX_PATH, fullPath, NULL);
+    return std::wstring(fullPath, fullPath + strlen(fullPath));
 }
 
 // Helper function to get current date/time as readable string
@@ -265,7 +289,8 @@ void logIPChange(const std::string &ipLogPath)
 
 int main()
 {
-    const std::string logFilePath = "ip_log.csv";
+    std::wstring wLogFilePath = GetFullPath("ip_log.csv"); // Initialize global variable with full path
+    logFilePath = std::string(wLogFilePath.begin(), wLogFilePath.end());
 
     // Create a hidden window for the tray icon
     WNDCLASSW wc = {0};
