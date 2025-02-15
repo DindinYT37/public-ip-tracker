@@ -1,6 +1,15 @@
-# IP Logger
+# Public IP Tracker
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat&logo=windows&logoColor=white)](https://github.com/DindinYT37/public-ip-tracker)
+[![C++](https://img.shields.io/badge/C++-17-blue.svg?style=flat&logo=c%2B%2B)](https://isocpp.org/)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/DindinYT37/public-ip-tracker)](https://github.com/DindinYT37/public-ip-tracker/releases)
 
 A Windows system tray application that monitors and logs changes to your public IP address.
+
+## Overview
+
+Public IP Tracker is a lightweight Windows utility that runs in your system tray and monitors changes to your public IP address. When a change is detected, it automatically logs the timestamp and new IP address to a CSV file for easy tracking and analysis.
 
 ## Features
 
@@ -10,12 +19,16 @@ A Windows system tray application that monitors and logs changes to your public 
 - Multiple IP checking services for reliability
 - Right-click menu to view or open log file
 - Supports both IPv4 and IPv6 addresses
+- Zero configuration required
+- Minimal CPU and memory footprint
 
 ## Installation
 
 1. Download the latest release from the Releases page
 2. Run the executable
 3. The application will start in your system tray
+
+No installation required - just download and run.
 
 ## Building from Source
 
@@ -30,12 +43,17 @@ A Windows system tray application that monitors and logs changes to your public 
 1. Clone the repository:
    ```bash
    git clone https://github.com/DindinYT37/public-ip-tracker.git
-   cd ip-logger
+   cd public-ip-tracker
    ```
 
 2. Open in VS Code and build:
    - Press F5 for debug build
    - Run "build" task for release build
+
+### Build Options
+
+- Debug build: Includes console window for debugging
+- Release build: No console window, runs silently in system tray
 
 ## Usage
 
@@ -47,6 +65,14 @@ A Windows system tray application that monitors and logs changes to your public 
    - Exit: Closes the application
 
 The log file (ip_log.csv) will be created in the same directory as the executable.
+
+## CSV Format
+
+The log file uses a simple CSV format:
+```csv
+Timestamp,IP Address
+2024-01-01 12:00:00,192.168.1.1
+```
 
 ## Contributing
 
