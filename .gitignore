@@ -1,2 +1,7 @@
 *.exe
 *.csv
++.vscode/
++.vs/
++build/
++*.o
++*.obj

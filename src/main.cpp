@@ -6,6 +6,7 @@
 #include <chrono>
 #include <thread>
 #include <ctime>
+#include <filesystem>
 
 #define UNICODE
 #define _UNICODE
@@ -41,7 +42,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (LOWORD(wParam) == ID_TRAY_EXIT)
         {
             Shell_NotifyIconW(NIM_DELETE, &nid);
-            TerminateProcess(GetCurrentProcess(), 0);
+            PostQuitMessage(0);
         }
         else if (LOWORD(wParam) == ID_TRAY_REVEAL_CSV)
         {
@@ -71,7 +72,15 @@ void CreateTrayIcon(HWND hwnd)
     nid.uID = 1;
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     nid.uCallbackMessage = WM_TRAYICON;
-    nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    HICON hIcon = (HICON)LoadImageW(
+        GetModuleHandleW(NULL),
+        L"MAINICON",  // Add an icon resource with this identifier
+        IMAGE_ICON,
+        GetSystemMetrics(SM_CXSMICON),
+        GetSystemMetrics(SM_CYSMICON),
+        LR_DEFAULTCOLOR
+    );
+    nid.hIcon = hIcon ? hIcon : LoadIcon(NULL, IDI_APPLICATION);
     wcscpy_s(nid.szTip, L"IP Logger");
     Shell_NotifyIconW(NIM_ADD, &nid);
 }
@@ -190,6 +199,18 @@ std::string httpGet(const std::wstring &domain, const std::wstring &path)
     return result;
 }
 
+bool isValidIPAddress(const std::string& ip) {
+    // Basic IPv4 check
+    if (ip.find('.') != std::string::npos && ip.size() < 16) {
+        return true;
+    }
+    // Basic IPv6 check
+    if (ip.find(':') != std::string::npos && ip.size() < 40) {
+        return true;
+    }
+    return false;
+}
+
 // Returns public ID address if found, empty string if all endpoints fail
 std::string getPublicIP()
 {
@@ -204,8 +225,7 @@ std::string getPublicIP()
     {
         std::string response = httpGet(ep[0], ep[1]);
 
-        // Very basic check to see if response looks like an IPv4 address
-        if (response.find('.') != std::string::npos && response.size() < 32)
+        if (isValidIPAddress(response))
         {
             // Trim common whitespace/newlines
             while (!response.empty() && (response.back() == '\n' || response.back() == '\r' || response.back() == ' '))
@@ -228,6 +248,17 @@ std::string getPublicIP()
 // Check if there's a change in IP and append to "ip_log.csv" if so
 void logIPChange(const std::string &ipLogPath)
 {
+    std::error_code ec;
+    std::filesystem::path path(ipLogPath);
+    if (!std::filesystem::exists(path.parent_path(), ec)) {
+        try {
+            std::filesystem::create_directories(path.parent_path());
+        } catch (const std::exception& e) {
+            std::cerr << getCurrentTimestamp() << " - Failed to create directory: " << e.what() << "\n";
+            return;
+        }
+    }
+
     std::string currentIP = getPublicIP();
     if (currentIP.empty())
     {
@@ -307,14 +338,14 @@ int main()
     CreateTrayIcon(hwnd);
 
     // Run indefinitely, checking every 5 seconds
-    std::thread logThread([]()
-                          {
-        const std::string logFilePath = "ip_log.csv";
+    std::thread logThread([](const std::string& path)
+    {
         while (true)
         {
-            logIPChange(logFilePath);
+            logIPChange(path);
             std::this_thread::sleep_for(std::chrono::seconds(5));
-        } });
+        }
+    }, logFilePath);
 
     // Message loop for tray icon
     MSG msg;
